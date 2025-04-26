@@ -26,7 +26,9 @@ def transcribir_audio_a_texto(ruta_audio):
         keep_silence=500      # Mantener un poco de silencio alrededor de cada segmento
     )
     
+    texto_transcrito = "TRANSCRIPCIÓN ENTREVISTA\n\n"
     tiempo_acumulado = 0  # Tiempo acumulado en milisegundos
+    hablante_actual = "Entrevistadora"  # Alternar entre "Entrevistadora" y "Entrevistado"
     
     # Procesar cada segmento de audio
     for i, segmento in enumerate(segmentos):
@@ -45,8 +47,10 @@ def transcribir_audio_a_texto(ruta_audio):
                 texto = recognizer.recognize_google(audio_segmento, language="es-ES")
                 
                 # Añadir la marca de tiempo y el hablante al texto transcrito
-                texto_transcrito += f"({tiempo_inicial}) {texto}\n"
+                texto_transcrito += f"({tiempo_inicial}) {hablante_actual}. {texto}\n"
                 
+                # Alternar el hablante
+                hablante_actual = "Entrevistado" if hablante_actual == "Entrevistadora" else "Entrevistadora"
             except sr.UnknownValueError:
                 print(f"No se pudo transcribir el segmento {i}")
             except sr.RequestError as e:
@@ -61,17 +65,23 @@ def transcribir_audio_a_texto(ruta_audio):
     return texto_transcrito
 
 # Ruta al archivo de audio (en la misma carpeta)
-ruta_audio = "audio.mp4"
+ruta_audio = "Audios"#"audio.mp4"
 
 # Verifica si el archivo existe
 if not os.path.exists(ruta_audio):
     print(f"Error: El archivo '{ruta_audio}' no existe en la carpeta actual.")
 else:
-    # Transcribir el audio a texto
-    texto_final = transcribir_audio_a_texto(ruta_audio)
-
-    # Guardar el texto transcrito en un archivo
-    with open("transcripcion.txt", "w", encoding="utf-8") as archivo:
-        archivo.write(texto_final)
+    ruta_transcripcion = "Transcripcion"
+    if not os.path.exists(ruta_transcripcion):
+        os.mkdir(ruta_transcripcion)
+        
+    for raiz, carpetas, archivos in os.walk(ruta_audio):
+        for archivo in archivos:
+            if(archivo.endswith('.mp4')):
+                # Transcribir el audio a texto
+                texto_final = transcribir_audio_a_texto(ruta_audio + '/' + archivo)
+                # Guardar el texto transcrito en un archivo
+                with open(ruta_transcripcion+"/"+archivo.replace('.mp4','.txt'), "w", encoding="utf-8") as archivoTexto:
+                    archivoTexto.write(texto_final)
 
     print("Transcripción completada y guardada en 'transcripcion.txt'")
